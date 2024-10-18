@@ -1,0 +1,23 @@
+{
+  "name": "data-encryption",
+  "version": "1.0.0",
+  "description": "Data Encryption and Decryption in node js using the built in node js crypto module",
+  "main": "index.js",
+  "module" : "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "encryption",
+    "decryption",
+	"decrypter",
+	"encrypter"
+  ],
+  "author": "Zeilinger Alexander",
+  "license": "GPL-2.0",
+  "type": "module",
+  "repository": {
+  	"type": "git",
+	"url": "https://github.com/ZeilingerAlexander/DataEncrypterAndDecrypter"
+  }
+}
