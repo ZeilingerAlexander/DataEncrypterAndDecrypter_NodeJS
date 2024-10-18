@@ -21,7 +21,6 @@ async function GetBinaryBufferedKey(key){
 	}
 	else
 	{
-		console.log('else hit');
 		return Buffer.from(key, "binary");
 	}
 }
