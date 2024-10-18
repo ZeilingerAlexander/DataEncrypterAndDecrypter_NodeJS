@@ -1,5 +1,5 @@
 {
-  "name": "data-encryption",
+  "name": "string-encryption",
   "version": "1.0.0",
   "description": "Data Encryption and Decryption in node js using the built in node js crypto module",
   "main": "index.js",
