@@ -3,14 +3,27 @@ import crypto from "crypto";
 
 const defaultAlgorithm = "aes-256-gcm";
 
-/*throws on error*/
+/*rejects on error*/
 async function GetStretchedKey(/*BinaryLike*/key,/*BinaryLike*/salt,/*number*/keylen){
-	scrypt(key,salt,keylen,(err,derived_key) => {
-		if (err || derived_key === undefined){
-			throw new Error("Error deriving key using scrypt");
-		}
-		return derived_key;
+	return new Promise(async (resolve,reject) => {
+		scrypt(key,salt,keylen,(err,derived_key) => {
+			if (err || derived_key === undefined){
+				return reject("Error deriving key using scrypt");
+			}
+			return resolve(derived_key);
+		});
 	});
+}
+
+async function GetBinaryBufferedKey(key){
+	if (Buffer.isBuffer(key)){
+		return key;
+	}
+	else
+	{
+		console.log('else hit');
+		return Buffer.from(key, "binary");
+	}
 }
 
 /*returns the encrypted data in hexadecimal format as a string from the provided data, key and cipher algorithm<br>
@@ -18,8 +31,9 @@ async function GetStretchedKey(/*BinaryLike*/key,/*BinaryLike*/salt,/*number*/ke
 * first 32 chars is the salt for password stretching (hex format), next 32 chars is the iv for AES encrypted data (hex formar)<br>
 * next 32 chars (hex format) is the cipher auth and the rest is the AES encrypted data<br>
 * salt and iv are stored in plain text<br>
-* throws on error*/
+* throws on error or invalid key type, can be of type*/
 export async function EncryptData(/*String*/data, /*BinaryLike*/key, /*String*/ algorithm){
+	key = await GetBinaryBufferedKey(key);
 	if (algorithm === undefined){
 		algorithm = defaultAlgorithm;
 	}
@@ -45,6 +59,7 @@ export async function EncryptData(/*String*/data, /*BinaryLike*/key, /*String*/ 
  * returns undefined on decryption failure<br>
  * Will throw if called with data shorter then 96 or if key deriviation fails*/
 export async function DecryptData(/*String*/encrypted_data, /*BinaryLike*/key){
+	key = await GetBinaryBufferedKey(key);
 	if (algorithm === undefined){
 		algorithm = defaultAlgorithm;
 	}
