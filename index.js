@@ -1,9 +1,6 @@
 import {scrypt} from "node:crypto";
 import crypto from "crypto";
 
-// TODO : make it generic
-// TODO : move scrypt key strecthing to extra function to reduce redundancy
-
 const defaultAlgorithm = "aes-256-gcm";
 
 /*throws on error*/
