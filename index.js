@@ -63,7 +63,7 @@ export class DataCrypter{
 	 * returns undefined if the decryption fails*/
 	DecryptData = async function(/*object*/encryptedData, /*Buffer*/key){
 		if (this.DataEncoding !== undefined){
-			encryptedData = Buffer.from(encryptedData,encoding);
+			encryptedData = Buffer.from(encryptedData,this.DataEncoding);
 		}
 		else if (Buffer.isBuffer(encryptedData)){
 			encryptedData = Buffer.from(encryptedData);
