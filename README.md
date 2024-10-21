@@ -23,7 +23,7 @@ if (decrypted_data === data){
 ```
 
 ## Use a Different Algorithm
-Currently only algorithms that are able to use auth tags are supported. If there is demand for it i will make it so others work as well (create a github issue).<br>
+Currently only algorithms that are able to use auth tags are supported. If there is demand for it i will make it so others work as well [create a github issue](https://github.com/ZeilingerAlexander/DataEncrypterAndDecrypter_NodeJS/issues/new "github create new issue").<br>
 If you attempt to use an algorithm that does not support auth tags it will throw. If you put in the wrong values for key size and iv size it will throw.
 ```js
 import { DataCrypter } from "basic-crypter"
