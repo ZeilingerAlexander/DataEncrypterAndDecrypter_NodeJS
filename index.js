@@ -21,7 +21,7 @@ async function GetBinaryBufferedKey(key){
 	}
 	else
 	{
-		return Buffer.from(key, "binary");
+		return Buffer.from(key);
 	}
 }
 
@@ -30,7 +30,7 @@ async function GetBinaryBufferedKey(key){
 * first 32 chars is the salt for password stretching (hex format), next 32 chars is the iv for AES encrypted data (hex formar)<br>
 * next 32 chars (hex format) is the cipher auth and the rest is the AES encrypted data<br>
 * salt and iv are stored in plain text<br>
-* throws on error or invalid key type, can be of type*/
+* throws on internal error or bad Data/key input. Use the data types specified in the hints*/
 export async function EncryptData(/*String*/data, /*BinaryLike*/key, /*String*/ algorithm){
 	key = await GetBinaryBufferedKey(key);
 	if (algorithm === undefined){
@@ -40,7 +40,7 @@ export async function EncryptData(/*String*/data, /*BinaryLike*/key, /*String*/ 
     const iv = crypto.randomBytes(16);
 	const derived_key = await GetStretchedKey(key, salt, 32);
 
-    const cipher = crypto.createCipheriv("aes-256-gcm",derived_key,iv, {authTagLength:16});
+    const cipher = crypto.createCipheriv(algorithm,derived_key,iv, {authTagLength:16});
     let encrypted_data = cipher.update(data, "utf-8","hex");
     encrypted_data += cipher.final("hex");
     const cipher_auth = cipher.getAuthTag().toString("hex");
@@ -57,7 +57,7 @@ export async function EncryptData(/*String*/data, /*BinaryLike*/key, /*String*/ 
  * if algorithm is undefined it will default to aes-256-gcm<br>
  * returns undefined on decryption failure<br>
  * Will throw if called with data shorter then 96 or if key deriviation fails*/
-export async function DecryptData(/*String*/encrypted_data, /*BinaryLike*/key){
+export async function DecryptData(/*String*/encrypted_data, /*BinaryLike*/key, /*String*/algorithm){
 	key = await GetBinaryBufferedKey(key);
 	if (algorithm === undefined){
 		algorithm = defaultAlgorithm;
@@ -77,7 +77,7 @@ export async function DecryptData(/*String*/encrypted_data, /*BinaryLike*/key){
     try{
         let decrypted_data = decipher.update(acutalEncryptedData,"hex","utf-8");
         decrypted_data += decipher.final("utf-8");
-        return resolve(decrypted_data);
+        return decrypted_data;
     }
     catch (err){
 		return undefined;
