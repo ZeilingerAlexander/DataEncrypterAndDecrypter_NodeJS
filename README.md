@@ -46,7 +46,7 @@ if (decrypted_data === data){
 Depends on [node <code>crypto.createCipherIv()</code>](https://nodejs.org/api/crypto.html#cryptocreatecipherivalgorithm-key-iv-options "node js crypto library")<br>
 The Algorithm must support [node <code>cipher.getAuthTag()</code>](https://nodejs.org/api/crypto.html#ciphergetauthtag "node js crypto library")<br>
 If you are unsure if the algorithm is supported just try it out or use the default which should be fine for most use cases<br>
-Run <code>openssl list -cipher-algorithms</code> in your terminal to see supported algorithms
+Run <code>openssl list -cipher-algorithms</code> in your terminal to see availiabe algorithms (this does not mean that they are supported)
 
 ## Source Code and License
 See [github](https://github.com/ZeilingerAlexander/DataEncrypterAndDecrypter_NodeJS "github repo")
