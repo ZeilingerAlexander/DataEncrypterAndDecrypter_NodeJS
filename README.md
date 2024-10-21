@@ -1,5 +1,5 @@
 # String Data Encrypter and Decrypter 
-Encrypts and decrypts strings using scrypt for key deriviation and all availiable algorithms in <code>crypto.createCipherIv</code>
+Encrypts and decrypts strings using scrypt for key deriviation and all availiable algorithms in <code>crypto.createCipherIv</code>, this is just a wrapper for the node crypto module which does all the heavy lifting
 
 ## Usage
 Make sure the key is an object that can be interpreted as a buffer<br>
