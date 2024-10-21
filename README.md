@@ -1,5 +1,5 @@
-# String Data Encrypter and Decrypter 
-Encrypts and decrypts strings using scrypt for key deriviation and all availiable algorithms in <code>crypto.createCipherIv</code>, this is just a wrapper for the node crypto module which does all the heavy lifting
+# Data Encrypter and Decrypter 
+Encrypts and decrypts data using scrypt for key deriviation and all availiable algorithms in <code>crypto.createCipherIv</code>, this is just a wrapper for the node crypto module which does all the heavy lifting
 
 ## Usage
 Make sure the key is an object that can be interpreted as a buffer<br>
@@ -36,6 +36,27 @@ const data = "Very Secret Data";
 
 const encrypted_data = await crypter.EncryptData(data,key);
 const decrypted_data = await crypter.DecryptData(encrypted_data,key);
+
+if (decrypted_data === data){
+    console.log("Success!");
+}
+```
+
+## Encoding of input and output
+By default the ouput of encryptData is a buffer and the output of decryptData is in utf8. Here is how you can change it.
+```js
+import { DataCrypter } from "basic-crypter"
+
+// algorithm, key size (bytes), iv size (bytes)
+const crypter = new DataCrypter(undefined,undefined,undefined,"ascii","hex");
+
+const key = "test";
+const data = "Very Secret Data";
+
+const encrypted_data = await crypter.EncryptData(data,key);
+console.log(encrypted_data); // in hex
+const decrypted_data = await crypter.DecryptData(encrypted_data,key);
+console.log(decrypted_data); // in ascii
 
 if (decrypted_data === data){
     console.log("Success!");
