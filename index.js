@@ -2,6 +2,97 @@ import {scrypt} from "node:crypto";
 import crypto from "crypto";
 
 const defaultAlgorithm = "aes-256-gcm";
+const defaultAlgorithmKeyBytes = 32;
+const defaultAlgorithmIvLength = 16;
+const defaultDataEncoding = undefined;
+const defaultOuputEncoding = "utf8";
+const saltLength = 16;
+const authTagLength = 16;
+
+export class DataCrypter{
+	/*if algorithm is provided algorithmKeyBytesLength must also be provided, defaults to aes-256-gcm
+	 * OutputEncoding defaults to utf8, DataEncoding defaults to undefined,iv defaults to 16*/
+	constructor(/*String*/algorithm, /*Number*/algorithmKeyBytesLength, /*Number*/algorithmIvLength, /*String*/OutputEncoding, /*String*/DataEncoding){
+		if (algorithm !== undefined){
+			if (algorithmKeyBytesLength === undefined){
+				throw new Error("Can't use custom algoirthm with undefined key bytes");
+			}
+			if (algorithmIvLength === undefined){
+				throw new Error("Can't use custom algoirthm with undefined iv");
+			}
+			if (!crypto.getCiphers().includes(algorithm)){
+				throw new Error("Unsupported algorithm");
+			}
+			this.algorithm = algorithm;
+			this.algorithmKeyBytesLength = algorithmKeyBytesLength;
+			this.algorithmIvLength = algorithmIvLength;
+		}
+		else{
+			this.algorithm = defaultAlgorithm;
+			this.algorithmKeyBytesLength = defaultAlgorithmKeyBytes;
+			this.algorithmIvLength = defaultAlgorithmIvLength;
+		}
+		this.OutputEncoding = OutputEncoding === undefined ? defaultOuputEncoding : OutputEncoding;
+		this.DataEncoding = DataEncoding === undefined ? defaultDataEncoding : DataEncoding;
+	}
+
+	/*Encrypts the provided data with key, returns the data as a buffer if DataEncoding is not set, else it returns it as a string using the DataEncoding<br>
+	 * Attempts to get a buffer from data and key if they are not a buffer, make sure they can be input into Buffer.from, see <link>https://nodejs.org/api/buffer.html#static-method-bufferfromarray</link>*/
+	EncryptData = async function(/*Buffer*/data, /*Buffer*/key){
+		if (!Buffer.isBuffer(data)){
+			data = Buffer.from(data);
+		}
+		if (!Buffer.isBuffer(key)){
+			key = Buffer.from(key);
+		}
+    	const salt = crypto.randomBytes(saltLength);
+    	const iv = crypto.randomBytes(this.algorithmIvLength);
+		const derived_key = await GetStretchedKey(key, salt, this.algorithmKeyBytesLength);
+	
+    	const cipher = crypto.createCipheriv(this.algorithm,derived_key,iv, {authTagLength:authTagLength});
+		const encryptedData = cipher.update(data);
+		const encryptedDataFinal = cipher.final();
+    	const cipher_auth = cipher.getAuthTag();
+
+		const encrypted = Buffer.concat([salt,iv,cipher_auth,encryptedData,encryptedDataFinal]);
+		return this.DataEncoding === undefined ? encrypted : encrypted.toString(this.DataEncoding);
+	}
+
+	/*Decrypts the provided data with the key, returns the datat as a buffer if OutputEncoding is not set, else it returns a string using OutputEncoding<br>
+	 * If inputEncoding is set it will use that to get a Buffer.from(data,inputEncoding).<br>
+	 * returns undefined if the decryption fails*/
+	DecryptData = async function(/*object*/encryptedData, /*Buffer*/key){
+		if (this.DataEncoding !== undefined){
+			encryptedData = Buffer.from(encryptedData,encoding);
+		}
+		else if (Buffer.isBuffer(encryptedData)){
+			encryptedData = Buffer.from(encryptedData);
+		}
+		if (!Buffer.isBuffer(key)){
+			key = Buffer.from(key);
+		}
+		if (encryptedData.length < saltLength + this.algorithmIvLength + authTagLength){
+			throw new Error("provided data to short to be valid");
+		}
+    	const salt = encryptedData.subarray(0,saltLength); 
+    	const iv = encryptedData.subarray(saltLength,saltLength+this.algorithmIvLength);
+    	const authTag = encryptedData.subarray(saltLength+this.algorithmIvLength,saltLength+this.algorithmIvLength+authTagLength);
+
+    	const acutalEncryptedData = encryptedData.subarray(saltLength+this.algorithmIvLength+authTagLength);
+		const derived_key = await GetStretchedKey(key, salt, this.algorithmKeyBytesLength);
+	
+    	const decipher = crypto.createDecipheriv(this.algorithm,derived_key,iv,{authTagLength:authTagLength});
+    	decipher.setAuthTag(authTag);
+    	try{
+			const decrypted = Buffer.concat([decipher.update(acutalEncryptedData), decipher.final()]);
+			return this.OutputEncoding === undefined ? decrypted : decrypted.toString(this.OutputEncoding);
+    	}
+    	catch (err){
+			return undefined;
+    	}
+	}
+}
+
 
 /*rejects on error*/
 async function GetStretchedKey(/*BinaryLike*/key,/*BinaryLike*/salt,/*number*/keylen){
@@ -13,73 +104,4 @@ async function GetStretchedKey(/*BinaryLike*/key,/*BinaryLike*/salt,/*number*/ke
 			return resolve(derived_key);
 		});
 	});
-}
-
-async function GetBinaryBufferedKey(key){
-	if (Buffer.isBuffer(key)){
-		return key;
-	}
-	else
-	{
-		return Buffer.from(key);
-	}
-}
-
-/*returns the encrypted data in hexadecimal format as a string from the provided data, key and cipher algorithm<br>
- * if the cipher algorithm is undefined it will default to aes-256-gcm<br>
-* first 32 chars is the salt for password stretching (hex format), next 32 chars is the iv for AES encrypted data (hex formar)<br>
-* next 32 chars (hex format) is the cipher auth and the rest is the AES encrypted data<br>
-* salt and iv are stored in plain text<br>
-* throws on internal error or bad Data/key input. Use the data types specified in the hints*/
-export async function EncryptData(/*String*/data, /*BinaryLike*/key, /*String*/ algorithm){
-	key = await GetBinaryBufferedKey(key);
-	if (algorithm === undefined){
-		algorithm = defaultAlgorithm;
-	}
-    const salt = crypto.randomBytes(16);
-    const iv = crypto.randomBytes(16);
-	const derived_key = await GetStretchedKey(key, salt, 32);
-
-    const cipher = crypto.createCipheriv(algorithm,derived_key,iv, {authTagLength:16});
-    let encrypted_data = cipher.update(data, "utf-8","hex");
-    encrypted_data += cipher.final("hex");
-    const cipher_auth = cipher.getAuthTag().toString("hex");
-
-    if (encrypted_data === undefined || cipher_auth === undefined){
-        throw new Error("failed to get encrypted data");
-    }
-
-    // resolve with the salt + iv + auth + data (all in hex)
-    return salt.toString("hex")+iv.toString("hex")+cipher_auth+encrypted_data;
-}
-
-/*Decrypts Data that was encrypted using the EncryptData function using the provided key and algorithm<br>
- * if algorithm is undefined it will default to aes-256-gcm<br>
- * returns undefined on decryption failure<br>
- * Will throw if called with data shorter then 96 or if key deriviation fails*/
-export async function DecryptData(/*String*/encrypted_data, /*BinaryLike*/key, /*String*/algorithm){
-	key = await GetBinaryBufferedKey(key);
-	if (algorithm === undefined){
-		algorithm = defaultAlgorithm;
-	}
-    // check if data can even contain the salt, iv and hash
-    if (encrypted_data === undefined || encrypted_data.Length < 32 + 32 + 32){
-        throw new Error("encrypted data is too short to contain salt iv and hash or its undefined...");
-    }
-    const salt = Buffer.from(encrypted_data.substring(0,32), "hex");
-    const iv = Buffer.from(encrypted_data.substring(32,64),"hex");
-    const authTag = Buffer.from(encrypted_data.substring(64,96), "hex");
-    const acutalEncryptedData = encrypted_data.substring(96);
-	const derived_key = await GetStretchedKey(key, salt, 32);
-
-    const decipher = crypto.createDecipheriv(algorithm,derived_key,iv,{authTagLength:16});
-    decipher.setAuthTag(authTag);
-    try{
-        let decrypted_data = decipher.update(acutalEncryptedData,"hex","utf-8");
-        decrypted_data += decipher.final("utf-8");
-        return decrypted_data;
-    }
-    catch (err){
-		return undefined;
-    }
 }
