@@ -47,7 +47,8 @@ By default the ouput of encryptData is a buffer and the output of decryptData is
 ```js
 import { DataCrypter } from "basic-crypter"
 
-// algorithm, key size (bytes), iv size (bytes)
+// leave rest undefined to use default options 
+// ascii is the output encoding and hex the data encoding to use on input to decrypt and output on encrypt
 const crypter = new DataCrypter(undefined,undefined,undefined,"ascii","hex");
 
 const key = "test";
