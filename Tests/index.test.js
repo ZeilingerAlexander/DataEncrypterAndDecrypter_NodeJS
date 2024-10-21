@@ -1,67 +1,130 @@
-import exp from "constants";
-import { EncryptData, DecryptData} from "../index.js"
+import { DataCrypter } from "../index.js"
 import * as crypto from "crypto"
 import {fail} from "assert";
 
-test("Basic Input",async () => {
+test("string inputs should work",async () => {
 	try{
-		expect(await EncryptData("abcdefg",crypto.randomBytes(10))).toBeDefined();
-		expect(await EncryptData("KSA*DHJA",crypto.randomBytes(10))).toBeDefined();
-		expect(await EncryptData("AS(D*J@UIOQAHDSOPA  Aa// //?||",crypto.randomBytes(10))).toBeDefined();
+		const data = "test";
+		const key = "key";
+		const crypter = new DataCrypter(); 
+		const encryptedData = await crypter.EncryptData(data,key);
+		const decryptedData = await crypter.DecryptData(encryptedData,key);
+
+		expect(decryptedData).toBe(data);
 	}
 	catch (ex){
+		console.error(ex);
 		fail();
 	}
+});
+
+test("long string inputs should work",async() => {
+	try{
+		const data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789!@#$%^&*()".repeat(500);
+		const key = "9*SDF(ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789!@#$%^&*()".repeat(500);
+		const crypter = new DataCrypter(); 
+		const encryptedData = await crypter.EncryptData(data,key);
+		const decryptedData = await crypter.DecryptData(encryptedData,key);
+
+		expect(decryptedData).toBe(data);
+	}
+	catch (ex){
+		console.error(ex);
+		fail();
+	}
+});
+
+test("buffer as inputs should work",async() => {
+	try{
+		const data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789!@#$%^&*()".repeat(50);
+		const key = "9*SDF(ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789!@#$%^&*()".repeat(5);
+		const crypter = new DataCrypter(); 
+		const encryptedData = await crypter.EncryptData(Buffer.from(data),Buffer.from(key));
+		const decryptedData = await crypter.DecryptData(encryptedData,Buffer.from(key));
+
+		expect(decryptedData).toBe(data);
+	}
+	catch (ex){
+		console.error(ex);
+		fail();
+	}
+});
+
+test("numeric inputs should not work",async() => {
+	try{
+		const data = 500023;
+		const key = 1040;
+		const crypter = new DataCrypter(); 
+		const encryptedData = await crypter.EncryptData(data,key);
+		const decryptedData = await crypter.DecryptData(encryptedData,key);
+		fail("test should've thrown");
+	}
+	catch (ex){
+		expect(true);
+	}
+});
+
+test("defined algorithm without key bytes should throw",async() =>{
+	try{
+		const data = "data";
+		const key = "secret";
+		const crypter = new DataCrypter("aes-256-gcm"); 
+		const encryptedData = await crypter.EncryptData(data,key);
+		const decryptedData = await crypter.DecryptData(encryptedData,key);
+		fail("test should've thrown");
+	}
+	catch (ex){
+		expect(true);
+	}
+});
+
+test("defined algorithm with defined key bytes but without iv length should throw",async() =>{
+	try{
+		const data = "data";
+		const key = "secret";
+		const crypter = new DataCrypter("aes-256-gcm",32); 
+		const encryptedData = await crypter.EncryptData(data,key);
+		const decryptedData = await crypter.DecryptData(encryptedData,key);
+		fail("test should've thrown");
+	}
+	catch (ex){
+		expect(true);
+	}
+});
+
+test("unsupported algorithm should throw",async() =>{
+	try{
+		const data = "data";
+		const key = "secret";
+		const crypter = new DataCrypter("ceaser",32,16,false); 
+		const encryptedData = await crypter.EncryptData(data,key);
+		const decryptedData = await crypter.DecryptData(encryptedData,key);
+		fail("test should've thrown");
+	}
+	catch (ex){
+		expect(true);
+	}
+});
+
+testSpecificAlgorithm("chacha20-poly1305", 32, 12);
+testSpecificAlgorithm();
+
+function testSpecificAlgorithm(algoName, keyLen, ivLen){
+	test(algoName + " algorithm should work",async() => {
+		try{
+			const data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789!@#$%^&*()".repeat(50) + crypto.randomBytes(20).toString("utf8");
+			const key = "9*SDF(ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789!@#$%^&*()".repeat(5) + crypto.randomBytes(20).toString("utf8");
+			const crypter = new DataCrypter(algoName,keyLen,ivLen); 
+			const encryptedData = await crypter.EncryptData(data,key);
+			const decryptedData = await crypter.DecryptData(encryptedData,key);
+			expect(decryptedData).toBe(data);
+		}
+		catch (ex){
+			console.error(ex);
+			fail();
+		}
 	});
-
-test("Invalid Inputs",async () => {
-	try{
-		await EncryptData(undefined,"");
-		await EncryptData("");
-		await EncryptData();
-		fail();
-	}
-	catch(ex){
-		expect(ex).toBeDefined();
-	}
-});
-
-test("Long inputs", async () => {
-	const data = "abcdefghijklmnopqrstuvwABCDEFGHIJKLMNOPQRSTUVW_@(!(#)(!#)@($!(*".repeat(5000);
-	const data2 = data.repeat(99);
-	try{
-		expect(await EncryptData(data,crypto.randomBytes(99999))).toBeDefined();
-		expect(await EncryptData(data2,crypto.randomBytes(99999999))).toBeDefined();
-	}
-	catch(ex){
-		fail();
-	}
-});
-
-function GetRandomString(length){
-	if (length === undefined){
-		length = 5000;
-	}
-	return crypto.randomBytes(length).toString("utf8");
 }
 
-test("Encryption and Decrytpion same string", async () => {
-	const key = crypto.randomBytes(50);
-	const key2 = crypto.randomBytes(223901);
-	const data = GetRandomString();
-	const data2 = GetRandomString();
-	const data3 = GetRandomString();
-	const data4 = GetRandomString();
-	const encrypted = await EncryptData(data,key);
-	const decrypted = await DecryptData(encrypted,key);
-	const encrypted2 = await EncryptData(data2,key2);
-	const decrypted2 = await DecryptData(encrypted2,key2);
-	const encrypted3 = await EncryptData(data3,key);
-	const decrypted3 = await DecryptData(encrypted3,key);
-	const encrypted4 = await EncryptData(data4,key2);
-	const decrypted4 = await DecryptData(encrypted4,key2);
-	expect(decrypted).toBe(data);
-	expect(decrypted2).toBe(data2);
-	expect(decrypted3).toBe(data3);
-	expect(decrypted4).toBe(data4);
-});
+
+

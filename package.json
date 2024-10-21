@@ -1,7 +1,7 @@
 {
-  "name": "string-encryption",
+  "name": "basic-crypter",
   "version": "1.0.0",
-  "description": "Data Encryption and Decryption in node js using the built in node js crypto module",
+  "description": "Data Encryption and Decryption wrapper around node js crpto module, Uses scrypt for key deriviation and handles the data encryption algorithm independent via <code>crypto.createCipheriv</code>. supports all algorithms that are able to use auth tags",
   "main": "index.js",
   "module": "index.js",
   "scripts": {
@@ -13,12 +13,17 @@
     "decrypter",
     "encrypter"
   ],
+  "files": [
+	  "package.json",
+	  "index.js",
+	  "README.md"
+  ],
   "author": "Zeilinger Alexander",
   "license": "GPL-2.0",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ZeilingerAlexander/DataEncrypterAndDecrypter"
+    "url": "https://github.com/ZeilingerAlexander/DataEncrypterAndDecrypter_NodeJS"
   },
   "devDependencies": {
     "jest": "^29.7.0"
