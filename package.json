@@ -1,6 +1,6 @@
 {
   "name": "basic-crypter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Data Encryption and Decryption wrapper around node js crpto module, Uses scrypt for key deriviation and handles the data encryption algorithm independent via <code>crypto.createCipheriv</code>. supports all algorithms that are able to use auth tags",
   "main": "index.js",
   "module": "index.js",
